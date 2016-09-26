@@ -33,6 +33,8 @@ class LSTMModel(object):
 
         self.layers = layers
 
+        self.f_output_prop = theano.function([x, mask], layers[-1].output)
+
         # get all params
         params = []
         for layer in layers:
@@ -73,7 +75,7 @@ class LSTMModel(object):
 
         self.test_model = theano.function(
             inputs=[x, mask],
-            outputs=[preds],
+            outputs=preds,
         )
 
     def fit(self, x, mask, y):
@@ -89,4 +91,6 @@ class LSTMModel(object):
 
     def predict(self, x, mask):
         preds = self.test_model(x, mask)
+        preds_prob = self.f_output_prop(x, mask)
+        # print(preds_prob[14], preds_prob)
         return preds
