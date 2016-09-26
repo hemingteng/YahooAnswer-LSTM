@@ -93,4 +93,9 @@ def vectorize_data(data, word_idx, sentence_size, class_num):
         sentences.append(sentence)
         masks.append(mask)
         labels.append(label)
+    # masks = np.array(masks, dtype=np.float32)
+    # masks = np.transpose(masks, (1, 0))
+
+    # sentences = np.array(sentences, dtype=np.int32)
+    # sentences = np.transpose(sentences, (1, 0))
     return np.array(sentences, dtype=np.int32), np.array(masks, dtype=np.float32), np.array(labels, dtype=np.int32)

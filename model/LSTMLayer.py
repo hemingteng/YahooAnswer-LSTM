@@ -88,16 +88,24 @@ class LSTMLayer(object):
         self.bc = bc
 
         def step(emb, mask, C, prev):
-            Gi = T.nnet.sigmoid(T.dot(emb, self.Wi1) + T.dot(prev, self.Wi2) + self.bi)
+            """
+
+            :param emb:  tensor (batch_size, embedding_size)
+            :param mask: tensor (batch_size)
+            :param C:    tensor (batch_size, hidden_size) T.zeros_like(T.dot(input[0], self.Wi1))
+            :param prev: tensor (batch_size, hidden_size)
+            :return:
+            """
+            Gi = T.nnet.sigmoid(T.dot(emb, self.Wi1) + T.dot(prev, self.Wi2) + self.bi) # (batch_size, hidden_size)
             Go = T.nnet.sigmoid(T.dot(emb, self.Wo1) + T.dot(prev, self.Wo2) + self.bo)
             Gf = T.nnet.sigmoid(T.dot(emb, self.Wf1) + T.dot(prev, self.Wf2) + self.bf)
             Ct = T.tanh(T.dot(emb, self.Wc1) + T.dot(prev, self.Wc2) + self.bc)
 
             CC = C * Gf + Ct * Gi
-            CC = CC * mask.dimshuffle(0,'x') 
+            CC = CC * mask.dimshuffle(0,'x')
             CC = T.cast(CC,'float32')
             h = T.tanh(CC) * Go
-            h = h * mask.dimshuffle(0,'x') 
+            h = h * mask.dimshuffle(0,'x')
             h = T.cast(h,'float32')
             return [CC, h]
 

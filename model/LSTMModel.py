@@ -7,7 +7,8 @@ from LSTMLayer import LSTMLayer
 from PoolLayer import LastPoolLayer
 from OutputLayer import OutputLayer
 
-
+# compute_test_value is 'off' by default, meaning this feature is inactive
+theano.config.compute_test_value = 'off' # Use 'warn' to activate this feature
 
 class LSTMModel(object):
     def __init__(self, learning_rate=0.001, optimizer=adadelta, embedding=None,
@@ -28,7 +29,7 @@ class LSTMModel(object):
         layers.append(EmbLayer(rng, x, embedding, embedding_size, 'emblayer'))
         layers.append(LSTMLayer(rng, layers[-1].output, mask, embedding_size, hidden_size, 'wordlstmlayer'))
         layers.append(LastPoolLayer(layers[-1].output))
-        layers.append(OutputLayer(rng, layers[-1].output, hidden_size, class_num, 'fulllayer', activation=T.nnet.softmax))
+        layers.append(OutputLayer(rng, layers[-1].output, hidden_size, class_num, 'softmaxlayer', activation=T.nnet.softmax))
 
         self.layers = layers
 
@@ -38,7 +39,7 @@ class LSTMModel(object):
             params += layer.params
 
         # define cost
-        cost = -T.mean(T.log(layers[-1].output[T.arange(batch_size), y]), dtype=config.floatX)
+        cost = -T.mean((T.log(layers[-1].output)[T.arange(y.shape[0]), y]), dtype=config.floatX)
         L2_rate = np.float32(1e-5)
         for param in params[1:]:
             cost += T.sum(L2_rate * (param * param), dtype=config.floatX)

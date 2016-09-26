@@ -5,6 +5,7 @@ from sklearn import metrics
 from model.LSTMModel import LSTMModel
 from process import *
 
+hidden_size = 200
 class_num = 22
 max_epochs = 100
 batch_size = 32
@@ -38,7 +39,7 @@ print("valid data", n_valid)
 print("test data", n_test)
 
 
-model = LSTMModel(batch_size, embedding=embedding)
+model = LSTMModel(hidden_size=hidden_size, batch_size=batch_size,  embedding=embedding)
 
 batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_train, batch_size))
 for t in range(max_epochs):
@@ -50,7 +51,12 @@ for t in range(max_epochs):
         sent = train_sents[start:end]
         mask = train_masks[start:end]
         label = train_labels[start:end]
+
+        sent = np.transpose(sent, (1, 0))
+        mask = np.transpose(mask, (1, 0))
+
         cost_t = model.fit(sent, mask, label)
+        print("cost_t", cost_t, "epochs", start)
         total_cost += cost_t
 
     if t % evaluation_interval == 0:
@@ -61,11 +67,16 @@ for t in range(max_epochs):
             mask = train_masks[start:end]
             label = train_labels[start:end]
 
+            sent = np.transpose(sent, (1, 0))
+            mask = np.transpose(mask, (1, 0))
+
             pred = model.predict(sent, mask)
             train_preds += list(pred)
 
         train_acc = metrics.accuracy_score(np.array(train_preds), train_labels)
 
+        valid_sents = np.transpose(valid_sents, (1, 0))
+        valid_masks = np.transpose(valid_masks, (1, 0))
         val_preds = model.predict(valid_sents, valid_masks)
         val_acc = metrics.accuracy_score(val_preds, valid_labels)
 
@@ -76,6 +87,9 @@ for t in range(max_epochs):
         print('Training Accuracy:', train_acc)
         print('Validation Accuracy:', val_acc)
         print('-----------------------')
+
+test_sents = np.transpose(test_sents, (1, 0))
+test_masks = np.transpose(test_masks, (1, 0))
 
 test_preds = model.predict(test_sents, test_masks)
 test_acc = metrics.accuracy_score(test_preds, test_labels)
