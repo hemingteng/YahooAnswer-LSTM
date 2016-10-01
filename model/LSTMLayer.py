@@ -15,7 +15,7 @@ def randMatrix(rng, shape, lim):
     )
 
 class LSTMLayer(object):
-    def __init__(self, rng, input, mask, n_in, n_out, name, prefix=None):
+    def __init__(self, rng, input, mask, n_in, n_out, name, go_backwards=False, prefix=None):
         self.input = input
         self.name = name
 
@@ -102,16 +102,14 @@ class LSTMLayer(object):
             Ct = T.tanh(T.dot(emb, self.Wc1) + T.dot(prev, self.Wc2) + self.bc)
 
             CC = C * Gf + Ct * Gi
-            CC = CC * mask.dimshuffle(0,'x')
-            CC = T.cast(CC,'float32')
+            CC = CC * mask[:, None] + C * (1. - mask)[:, None]
             h = T.tanh(CC) * Go
-            h = h * mask.dimshuffle(0,'x')
-            h = T.cast(h,'float32')
+            h = h * mask[:, None] + prev * (1. - mask)[:, None]
             return [CC, h]
 
         outs, _ = theano.scan(fn=step,
             outputs_info=[T.zeros_like(T.dot(input[0], self.Wi1)), T.zeros_like(T.dot(input[0], self.Wi1))],
-            sequences=[input, mask])
+            sequences=[input, mask], go_backwards=go_backwards)
 
         self.output = outs[1]
 

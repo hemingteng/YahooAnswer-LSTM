@@ -4,8 +4,9 @@ from theano import config
 from optimizer import *
 from EmbLayer import EmbLayer
 from LSTMLayer import LSTMLayer
-from PoolLayer import LastPoolLayer
+from PoolLayer import *
 from OutputLayer import OutputLayer
+import lasagne
 
 # compute_test_value is 'off' by default, meaning this feature is inactive
 theano.config.compute_test_value = 'off' # Use 'warn' to activate this feature
@@ -27,9 +28,30 @@ class LSTMModel(object):
         layers = []
 
         layers.append(EmbLayer(rng, x, embedding, embedding_size, 'emblayer'))
-        layers.append(LSTMLayer(rng, layers[-1].output, mask, embedding_size, hidden_size, 'wordlstmlayer'))
-        layers.append(LastPoolLayer(layers[-1].output))
-        layers.append(OutputLayer(rng, layers[-1].output, hidden_size, class_num, 'softmaxlayer', activation=T.nnet.softmax))
+
+        forward_lstm = LSTMLayer(rng, layers[-1].output, mask, embedding_size, hidden_size, 'wordlstmlayer')
+        backward_lstm = LSTMLayer(rng, layers[-1].output, mask, embedding_size, hidden_size, True, 'backwordlstmlayer')
+        bilstm = T.concatenate([forward_lstm.output,  backward_lstm.output], axis=2)
+        #layers.append()
+
+        # layers.append(Dropout(layers[-1].output, 0.5, 1.0))
+        #
+        # l_forward = lasagne.layers.RecurrentLayer(
+        #     layers[-1].output, hidden_size, mask_input=mask,
+        #     W_in_to_hid=lasagne.init.HeUniform(),
+        #     W_hid_to_hid=lasagne.init.HeUniform(),
+        #     nonlinearity=lasagne.nonlinearities.tanh, only_return_final=True)
+        # l_backward = lasagne.layers.RecurrentLayer(
+        #     layers[-1].output, hidden_size, mask_input=mask,
+        #     W_in_to_hid=lasagne.init.HeUniform(),
+        #     W_hid_to_hid=lasagne.init.HeUniform(),
+        #     nonlinearity=lasagne.nonlinearities.tanh,
+        #     only_return_final=True, backwards=True)
+        # # Now, we'll concatenate the outputs to combine them.
+        # l_concat = lasagne.layers.ConcatLayer([l_forward, l_backward])
+
+        layers.append(SimpleAttentionLayer(rng, bilstm, mask, 2*hidden_size, 2*hidden_size, 'attelayer'))
+        layers.append(OutputLayer(rng, layers[-1].output, 2*hidden_size, class_num, 'softmaxlayer', activation=T.nnet.softmax))
 
         self.layers = layers
 

@@ -5,17 +5,18 @@ from sklearn import metrics
 from model.LSTMModel import LSTMModel
 from process import *
 import pyprind
-hidden_size = 200
+import lasagne
+
+hidden_size = 150
 class_num = 22
 max_epochs = 100
-batch_size = 512
+batch_size = 32
 evaluation_interval = 1
 embedding_file = "/home/junfeng/word2vec/GoogleNews-vectors-negative300.bin"
 
 print("Loading Task")
 
 train_data, valid_data, test_data = load_data('./data')
-np.random.shuffle(train_data)
 data = train_data + valid_data + test_data
 
 print("Loading Embedding")
@@ -46,11 +47,10 @@ model = LSTMModel(hidden_size=hidden_size, batch_size=batch_size,  embedding=emb
 
 batches = zip(range(0, n_train-batch_size, batch_size), range(batch_size, n_train, batch_size))
 for t in range(max_epochs):
-    np.random.shuffle(batches)
-
     total_cost = 0.0
     preds = []
     labels = []
+    np.random.shuffle(train_data)
 
     process_bar = pyprind.ProgPercent(n_train / batch_size)
     for start in range(0, n_train, batch_size):
@@ -84,6 +84,6 @@ for t in range(max_epochs):
         print('Validation Accuracy:', val_acc)
         print('-----------------------')
 
-test_preds = model.predict(list(test_sents), list(test_masks))
-test_acc = metrics.accuracy_score(test_labels, test_preds)
-print("Testing Accuracy:", test_acc)
+        test_preds = model.predict(list(test_sents), list(test_masks))
+        test_acc = metrics.accuracy_score(test_labels, test_preds)
+        print("Testing Accuracy:", test_acc)
